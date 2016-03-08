@@ -1,2 +1,23 @@
 # RedwoodOutputDataParser
 Tools for wrangling Redwood output data
+
+## redwoodParser
+
+Use function `redwoodParser`. 
+
+Given output data, as a CSV with columns `Period`,	`Group`,	`Sender`,	`Time`,	`ClientTime`, `Key`, and `Value`,
+this function expands all key-value combinations in the `Value` column to a separate column. 
+
+If a particular row doesn't contain a particular key-value combination, `NA` results. 
+
+
+### Arguements
+
+- **`data`**: an Redwood experiment output file read into r as a data frame.
+
+- **`keys`**: the keys under the `Key` column you wish to keep. All others are dropped. 
+
+
+### Dependencies 
+
+Requires  r packages `RJSONIO` and `dplyr`.
