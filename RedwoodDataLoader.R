@@ -22,8 +22,9 @@ redwoodParser <- function(data, keys){
   data <- bind_cols(data, KeyData)
 }
 
-testData <- read.csv("ExperimentData.csv")
-testData <- redwoodParser(data = testData, 
-              keys = c("trade", "cancel","offer_text"))
-table(testData$Key)
-(testData$Value)
+# Example ==========
+# 
+# testData <- read.csv("ExperimentData.csv")
+# testData <- redwoodParser(data = testData, 
+#               keys = c("trade", "cancel","offer_text"))
+
