@@ -15,6 +15,7 @@ redwoodParser <- function(data, keys){
   KeyData[nrow(KeyData),] <- paste(c(KeyData[nrow(KeyData),],"]"), collapse = "")
   KeyData <- paste(unlist(KeyData), collapse=",")
   KeyData <- fromJSON(KeyData) #requires RJSONIO
+
   KeyData <- lapply(KeyData, function(x) {
     x[sapply(x, is.null)] <- NA
     data.frame(x)

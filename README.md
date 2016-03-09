@@ -1,7 +1,7 @@
 # RedwoodOutputDataParser
 Tools for wrangling Redwood output data
 
-## redwoodParser
+# redwoodParser
 
 Use function `redwoodParser`. 
 
@@ -21,3 +21,18 @@ If a particular row doesn't contain a particular key-value combination, `NA` res
 ### Dependencies 
 
 Requires  r packages `RJSONIO` and `dplyr`.
+
+### For Example
+
+From this: `testData <- read.csv("ExperimentData.csv")`
+
+![](figs/ExStart.png)
+
+
+To this: 
+
+```{r}
+ testData <- redwoodParser(data = testData,
+             keys = c("trade", "cancel","offer_text"))
+```
+![](figs/ExResult.png)
