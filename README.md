@@ -11,7 +11,7 @@ this function expands all key-value combinations in the `Value` column to a sepa
 If a particular row doesn't contain a particular key-value combination, `NA` results. 
 
 
-### Arguements
+### Arguments
 
 - **`data`**: an Redwood experiment output file read into r as a data frame.
 
