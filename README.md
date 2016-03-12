@@ -1,4 +1,4 @@
-# RedwoodOutputDataParser
+# Redwood Output Data Parser
 Tools for wrangling Redwood output data
 
 # redwoodParser
@@ -20,7 +20,7 @@ If a particular row doesn't contain a particular key-value combination, `NA` res
 
 ### Dependencies 
 
-Requires  r packages `RJSONIO` and `dplyr`.
+Requires  r packages `jsonlite` and `dplyr`.
 
 ### For Example
 
