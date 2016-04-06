@@ -5,7 +5,7 @@ source("RedwoodDataLoader.R")
 ## Continuous Markets -----
 
 CM.testData <- read.csv("examples/ContinuousMarketsExperimentData.csv")
-CM.testData <- redwoodParser(data = CMtestData,
+CM.testData <- redwoodParser(data = CM.testData,
                keys = c("trade", "cancel","offer_text"))
 
 
