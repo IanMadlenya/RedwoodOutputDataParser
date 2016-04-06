@@ -1,16 +1,16 @@
-# Examples
+# Examples -----
 
 source("RedwoodDataLoader.R")
 
-# Continuous Markets -----
+## Continuous Markets -----
 
-CMtestData <- read.csv("examples/ContinuousMarketsExperimentData.csv")
-CMtestData <- redwoodParser(data = CMtestData,
+CM.testData <- read.csv("examples/ContinuousMarketsExperimentData.csv")
+CM.testData <- redwoodParser(data = CMtestData,
                keys = c("trade", "cancel","offer_text"))
 
 
 
-# BJ Pricing -----
+## BJ Pricing -----
 
 BJP.testData <- read.csv("examples/BJPricingExperimentData.csv")
 BJP.testData <- redwoodParser(data = BJP.testData,
