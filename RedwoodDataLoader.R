@@ -11,6 +11,11 @@ source("r/helperfunctions.R")
 #   data = CMtestData
 #   subdata=data[[1]]
 
+#   keys = c("LOG_CONFIG","state", "actions", "targets")
+#   data = Bub.testData
+#   subdata=data[[1]]
+
+
 redwoodParser <- function(data, keys){
   
   # keep only desired keys
@@ -26,9 +31,15 @@ redwoodParser <- function(data, keys){
     KeyData <- paste(c("[", KeyData, "]"), collapse="")
     KeyData <- fromJSON(KeyData)
     
-    if (typeof(KeyData[[1]][[1]])=="list"){
-      data_repeatTimes <- sapply(KeyData, function(x) {sapply(x, length)}) #used for multiline entries
-
+      if (typeof(KeyData[[1]][[1]]) == "list"){
+      
+      #used for multiline entries
+      if (is.data.frame(KeyData[[1]][[1]])){
+        data_repeatTimes <- sapply(KeyData, function(x) {sapply(x, nrow)}) 
+      } else {
+        data_repeatTimes <- sapply(KeyData, function(x) {sapply(x, length)})
+      }
+      
       # KeyData <- lapply(KeyData, function(x){
       #   lapply(x[[1]], function(y){
       #     bind_rows(data.frame(as.list(y)))
@@ -57,8 +68,13 @@ redwoodParser <- function(data, keys){
       subdata <- subdata %>% select(-Value)
       subdata <- bind_cols(subdata, KeyData) 
       
-    } else{
+    } else  {
       KeyData <- bind_rows(KeyData)
+      
+      #rename col names, avoid mixmatch of identically named vars
+      nameMessage <- unique(subdata$Key)
+      names(KeyData) <- paste(nameMessage,(names(KeyData)), sep=".")
+      
       subdata <- subdata %>% select(-Value)
       subdata <- bind_cols(subdata, KeyData)      
     }
