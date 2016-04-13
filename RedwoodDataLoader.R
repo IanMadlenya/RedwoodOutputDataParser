@@ -4,7 +4,7 @@ source("r/helperfunctions.R")
 
 #   debugging
 #   keys = c("state", "actions", "targets")
-#   data=BJP.testData <- read.csv("examples/BJPricingExperimentData.csv")
+#   data=BJP.testData <- read.csv("examples/data/BJPricingExperimentData.csv")
 #   subdata=data[[1]]
 
 #   keys = c("trade", "cancel","offer_text")
@@ -14,6 +14,13 @@ source("r/helperfunctions.R")
 #   keys = c("LOG_CONFIG","state", "actions", "targets")
 #   data = Bub.testData
 #   subdata=data[[1]]
+
+
+#   data = matching.testData
+# keys = c("action", "action_owntype",
+#           "action_partnertype", "exit",
+#           "repeataction_owntype","repeataction_partnertype")
+
 
 
 redwoodParser <- function(data, keys){
@@ -32,7 +39,8 @@ redwoodParser <- function(data, keys){
     KeyData <- fromJSON(KeyData)
     
       if (typeof(KeyData[[1]][[1]]) == "list"){
-      
+      # if the value is a complex json object
+        
       #used for multiline entries
       if (is.data.frame(KeyData[[1]][[1]])){
         data_repeatTimes <- sapply(KeyData, function(x) {sapply(x, nrow)}) 
@@ -52,7 +60,19 @@ redwoodParser <- function(data, keys){
       subdata <- subdata %>% select(-Value)
       subdata <- subdata[rep(seq_len(nrow(subdata)), times = data_repeatTimes),]
       subdata <- bind_cols(subdata, KeyData)
+      
+      #rename vars names, add Key-name to values
+      nameMessage <- unique(subdata$Key)
+      names(subdata)[7:ncol(subdata)] = paste(nameMessage, names(subdata)[7:ncol(subdata)], sep = ".")
+      
+    } else if (is.vector(KeyData)){
+      #in the simple case, if value is just a single value (of any type)
+      nameMessage <- unique(subdata$Key)
+      names(subdata)[which(names(subdata) == "Value")] = nameMessage
+      
     } else if (class(KeyData) == "data.frame" & is.vector(KeyData[1,])){
+      #in the case that the value can be exprssed as a muli-row dataframe
+      
       nameMessage <- unique(subdata$Key)
       
       # KeyData <- lapply(KeyData, function(x){
@@ -69,6 +89,8 @@ redwoodParser <- function(data, keys){
       subdata <- bind_cols(subdata, KeyData) 
       
     } else  {
+      # in the case....
+      
       KeyData <- bind_rows(KeyData)
       
       #rename col names, avoid mixmatch of identically named vars
