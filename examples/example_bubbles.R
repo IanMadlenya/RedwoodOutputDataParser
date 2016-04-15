@@ -57,6 +57,28 @@ Bub.testData.2 <- Bub.testData %>%
     temp.time.keep == 1
   ) %>%
   select(
-    -temp.timeDist,-temp.time.rank, -temp.time.keep
+    -temp.timeDist,-temp.time.rank, -temp.time.keep, temp.time
   )
 # write.csv(Bub.testData.2, file = "examples/data/Bub.testData.csv", row.names = F)
+
+# Plot Actions over time, within periods #################
+
+library(ggplot2)
+# add within period time
+Bub.testData.2 <- Bub.testData.2 %>%
+  ungroup()%>%
+  group_by(Period) %>%
+  mutate(
+    Time.Period = Time - min(Time),
+    Time.Period = Time.Period / 1000000000
+  )
+
+ggplot(Bub.testData.2,
+       aes(x = Time.Period, y = state.action, colour = state.subjectid)) +
+  geom_line() +
+  facet_wrap(~Period)
+
+
+
+
+
