@@ -2,7 +2,7 @@ require(jsonlite)
 require(dplyr)
 source("r/helperfunctions.R")
 
-#   debugging
+#   debugging ---------
 #   keys = c("state", "actions", "targets")
 #   data=BJP.testData <- read.csv("examples/data/BJPricingExperimentData.csv")
 #   subdata=data[[1]]
@@ -22,6 +22,13 @@ source("r/helperfunctions.R")
 #           "repeataction_owntype","repeataction_partnertype")
 
 
+# ttm_data  = read.csv("examples/example_ttm/TTM-Baruch-2016-04-15 13_54_53.101035 (1).csv")
+# ttm_data_round <- ttm_data %>% dplyr::filter(Period == 56)
+# data = ttm_data_round
+# keys = "rp.round_started"
+
+
+# Functions ------------------
 
 redwoodParser <- function(data, keys){
   
@@ -29,18 +36,22 @@ redwoodParser <- function(data, keys){
   data <- data %>% 
     mutate(Key = as.character(Key)) %>%
     dplyr::filter(Key %in% keys)
+
   
-  output <- data.frame()
-  data <- split(data, data$Key)
-  for (subdata in data){
+  # -----------------------------
+  # Key-Level Parser WorkHorse
+  # Given a subset of data for just one Key, apply this.
+  # the complicated and tricky part is dealing with each type of "Value" redwood produces
+  # these may be single values, or large data.frames, or lists, or somethese else. 
+  rw_parsr <- function(subdata){
     KeyData <- subdata %>% select(Value) %>% mutate(Value = as.character(Value)) %>% tbl_df
     KeyData <- paste(unlist(KeyData), sep = "",  collapse=",")
     KeyData <- paste(c("[", KeyData, "]"), collapse="")
     KeyData <- fromJSON(KeyData)
     
-      if (typeof(KeyData[[1]][[1]]) == "list"){
+    if (typeof(KeyData[[1]][[1]]) == "list"){
       # if the value is a complex json object
-        
+      
       #used for multiline entries
       if (is.data.frame(KeyData[[1]][[1]])){
         data_repeatTimes <- sapply(KeyData, function(x) {sapply(x, nrow)}) 
@@ -91,6 +102,8 @@ redwoodParser <- function(data, keys){
     } else  {
       # in the case....
       
+      KeyData <- as.data.frame(lapply(KeyData, cbind))
+      
       KeyData <- bind_rows(KeyData)
       
       #rename col names, avoid mixmatch of identically named vars
@@ -98,11 +111,30 @@ redwoodParser <- function(data, keys){
       names(KeyData) <- paste(nameMessage,(names(KeyData)), sep=".")
       
       subdata <- subdata %>% select(-Value)
-      subdata <- bind_cols(subdata, KeyData)      
+      subdata <- bind_cols(subdata, KeyData)
     }
-    #recombine
-    output <- bind_rows(output, subdata)
+    
+    return(subdata)
+    
   }
+  # -----------------------------
+  
+  #apply rw parswer workhorse 
+  
+  if (length(keys) == 1){
+    output <- rw_parsr(data)
+  } else {
+    data <- split(data, data$Key)
+    output <- data.frame()
+    for (subdata in data){
+      subdata <- rw_parsr(subdata)
+      
+      #recombine
+      output <- bind_rows(output, subdata)
+    }
+  }
+  
+  
 
   # sort by time
   output <- output %>% 
@@ -111,4 +143,6 @@ redwoodParser <- function(data, keys){
     arrange(Time)
   
 }
+
+rwp <- redwoodParser
 
