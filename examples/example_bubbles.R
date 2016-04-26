@@ -10,6 +10,27 @@ Bub.testData <- read.csv("examples/data/Bubbles.csv")
 Bub.testData <- redwoodParser(data = Bub.testData,
                               keys = c("LOG_CONFIG","state")) #only want two messages
 
+
+# ------
+# Two SubSession Session
+Bub.testData <- read.csv("examples/example_bubbles/Bubbles-2016-04-26 pt1.csv")
+Pt1Period = max(Bub.testData$Period)
+
+Bub.testData.pt2 <-   read.csv("examples/example_bubbles/Bubbles-2016-04-26 pt2.csv") %>%
+  mutate(
+    Period = Period + Pt1Period
+  )
+
+Bub.testData <- bind_rows(
+  Bub.testData,
+  Bub.testData.pt2
+)
+# Bub.testData <- read.csv("C:/Users/OKComputer/Downloads/Bubbles-2016-04-14 08-25-19.468240.csv") #from a local copy
+Bub.testData <- redwoodParser(data = Bub.testData,
+                              keys = c("LOG_CONFIG","state")) #only want two messages
+
+
+
 # -----
 #' apply config fields to all rows ###################
 Bub.testData.Config <- Bub.testData %>%
@@ -60,14 +81,43 @@ Bub.testData.2 <- Bub.testData %>%
   select(
     -temp.timeDist,-temp.time.rank, -temp.time.keep, temp.time
   )
-# write.csv(Bub.testData.2, file = "examples/data/Bub.testData.csv", row.names = F)
+
+Bub.testData.2 <- Bub.testData.2 %>%
+  ungroup()%>%
+  group_by(Period) %>%
+  mutate(
+    Time.Period = Time - min(Time),
+    Time.Period = Time.Period / 1000000000,
+    state.subjectid = as.factor(state.subjectid)
+  )
+
+# write.csv(Bub.testData.2, file = "examples/example_bubbles/Bub.testData.csv", row.names = F)
 
 # ------
 # Plot Actions over time, within periods #################
 
 library(ggplot2)
 # add within period time
-Bub.testData.2 <- Bub.testData.2 %>%
+
+# Group 2 ==============
+Bub.testData.g2 <- Bub.testData.2 %>%
+  filter(Group == 2) %>%
+  ungroup()%>%
+  group_by(Period) %>%
+  mutate(
+    Time.Period = Time - min(Time),
+    Time.Period = Time.Period / 1000000000,
+    state.subjectid = as.factor(state.subjectid)
+  )
+
+ggplot(Bub.testData.g2,
+       aes(x = Time.Period, y = state.action, colour = state.subjectid)) +
+  geom_line() +
+  facet_wrap(~Period)
+
+# Group 1 ==============
+Bub.testData.g1 <- Bub.testData.2 %>%
+  filter(Group == 1) %>%
   ungroup()%>%
   group_by(Period) %>%
   mutate(
@@ -75,7 +125,7 @@ Bub.testData.2 <- Bub.testData.2 %>%
     Time.Period = Time.Period / 1000000000
   )
 
-ggplot(Bub.testData.2,
+ggplot(Bub.testData.g1,
        aes(x = Time.Period, y = state.action, colour = state.subjectid)) +
   geom_line() +
   facet_wrap(~Period)
