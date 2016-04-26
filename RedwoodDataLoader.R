@@ -2,7 +2,7 @@ require(jsonlite)
 require(dplyr)
 source("r/helperfunctions.R")
 
-#   debugging ---------
+# debugging ---------
 #   keys = c("state", "actions", "targets")
 #   data=BJP.testData <- read.csv("examples/data/BJPricingExperimentData.csv")
 #   subdata=data[[1]]
@@ -15,13 +15,14 @@ source("r/helperfunctions.R")
 #   data = Bub.testData
 #   subdata=data[[1]]
 
+# Debugging CUNY Matching =======
+#   data = matching.testData <- read.csv("examples/data/Matching-Steve Active Dev -strategy method.csv")
+#   keys = c("strategy","action","action_round", "action_owntype",
+#          "action_partnertype","action_partnerid",
+#          "exit", "repeataction_owntype",
+#          "repeataction_partnertype","repeataction_partnerid")
 
-#   data = matching.testData
-# keys = c("action", "action_owntype",
-#           "action_partnertype", "exit",
-#           "repeataction_owntype","repeataction_partnertype")
-
-
+# Debugging TTM ========= 
 # ttm_data  = read.csv("examples/example_ttm/TTM-Baruch-2016-04-15 13_54_53.101035 (1).csv")
 # ttm_data_round <- ttm_data %>% dplyr::filter(Period == 56)
 # data = ttm_data_round
@@ -99,6 +100,13 @@ redwoodParser <- function(data, keys){
       subdata <- subdata %>% select(-Value)
       subdata <- bind_cols(subdata, KeyData) 
       
+    } else if (class(KeyData) == "matrix"){
+      nameMessage <- unique(subdata$Key)
+      KeyData <- as.data.frame(KeyData)
+      names(KeyData) <- paste(nameMessage,(1:ncol(KeyData)), sep=".")
+      subdata <- subdata %>% select(-Value)
+      subdata <- bind_cols(subdata, KeyData)
+      
     } else  {
       # in the case....
       
@@ -121,9 +129,9 @@ redwoodParser <- function(data, keys){
   
   #apply rw parswer workhorse 
   
-  if (length(keys) == 1){
+  if (length(keys) == 1){ # simple case; only want one key
     output <- rw_parsr(data)
-  } else {
+  } else { # dealing with multiple keys
     data <- split(data, data$Key)
     output <- data.frame()
     for (subdata in data){
