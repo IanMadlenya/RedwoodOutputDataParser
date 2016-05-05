@@ -13,6 +13,7 @@ source("r/helperfunctions.R")
 
 #   keys = c("LOG_CONFIG","state", "actions", "targets")
 #   data = Bub.testData
+#   keys = c("state", "updateAction", "endofsubperiod")
 #   subdata=data[[1]]
 
 # Debugging CUNY Matching =======
@@ -36,7 +37,9 @@ redwoodParser <- function(data, keys){
   # keep only desired keys
   data <- data %>% 
     mutate(Key = as.character(Key)) %>%
-    dplyr::filter(Key %in% keys)
+    mutate(Time = Time %/% 100000000) %>%
+    select(-ClientTime) %>%
+    dplyr::filter(Key %in% keys) 
 
   
   # -----------------------------
@@ -50,7 +53,13 @@ redwoodParser <- function(data, keys){
     KeyData <- paste(c("[", KeyData, "]"), collapse="")
     KeyData <- fromJSON(KeyData)
     
-    if (typeof(KeyData[[1]][[1]]) == "list"){
+    if (length(KeyData) == 0){
+      subdata <- subdata %>%
+        mutate(NewCol = TRUE)
+      names(subdata)[length(names(subdata))] = unique(subdata$Key)
+      subdata <- subdata %>% select(-Value)
+      
+    } else if (typeof(KeyData[[1]][[1]]) == "list"){
       # if the value is a complex json object
       
       #used for multiline entries
@@ -83,23 +92,32 @@ redwoodParser <- function(data, keys){
       names(subdata)[which(names(subdata) == "Value")] = nameMessage
       
     } else if (class(KeyData) == "data.frame" & is.vector(KeyData[1,])){
-      #in the case that the value can be exprssed as a muli-row dataframe
+      # when the value is a data.frame
       
-      nameMessage <- unique(subdata$Key)
-      
-      # KeyData <- lapply(KeyData, function(x){
-      #   (unlist(x))
-      # })
-      KeyData <- lapply(KeyData, function(x){
-        as.data.frame(t(data.frame(x)),
-                      stringsAsFactors = F)
-      })
-      KeyData <- bind_rows(KeyData)
-      names(KeyData) <- paste(nameMessage,substr(names(KeyData),2,2), sep=".")
-      
-      subdata <- subdata %>% select(-Value)
-      subdata <- bind_cols(subdata, KeyData) 
-      
+      if (is.data.frame(KeyData) & ncol(KeyData) == 1){
+        # when the value is a ONE-COLUMN dataframe
+        nameMessage <- unique(subdata$Key) #setup name for new column
+        subdata$Value = unlist(KeyData[1]) # put in parsed-json-value
+        names(subdata)[which(names(subdata) == "Value")] = paste(nameMessage,names(KeyData), sep = ".") #rename
+        
+      } else {
+        #in the case that the value can be exprssed as a muli-row dataframe
+        
+        nameMessage <- unique(subdata$Key)
+        
+        # KeyData <- lapply(KeyData, function(x){
+        #   (unlist(x))
+        # })
+        KeyData <- lapply(KeyData, function(x){
+          as.data.frame(t(data.frame(x)),
+                        stringsAsFactors = F)
+        })
+        KeyData <- bind_rows(KeyData)
+        names(KeyData) <- paste(nameMessage,substr(names(KeyData),2,2), sep=".")
+        
+        subdata <- subdata %>% select(-Value)
+        subdata <- bind_cols(subdata, KeyData)
+      }
     } else if (class(KeyData) == "matrix"){
       nameMessage <- unique(subdata$Key)
       KeyData <- as.data.frame(KeyData)
@@ -132,21 +150,32 @@ redwoodParser <- function(data, keys){
   if (length(keys) == 1){ # simple case; only want one key
     output <- rw_parsr(data)
   } else { # dealing with multiple keys
+    output <- data[0,] %>% select(Period, Sender, Group, Time, Key)
     data <- split(data, data$Key)
-    output <- data.frame()
     for (subdata in data){
       subdata <- rw_parsr(subdata)
       
       #recombine
-      output <- bind_rows(output, subdata)
+      output <- full_join(output, subdata,
+                          by = c("Period","Group","Sender","Time")) 
+      
+      # merge keys into one column
+      if ("Key.x" %in% names(output)){
+        output <- output%>%
+          mutate(Key.x = as.character(ifelse(is.na(Key.x), "", Key.x)),
+                 Key.y = as.character(ifelse(is.na(Key.y), "", Key.y))
+          ) %>%
+          unite(Key, starts_with("Key"), sep = " ")        
+      }
+      
+
     }
   }
   
-  
 
   # sort by time
-  output <- output %>% 
-    mutate(datetime = (myformat.POSIXct(Time/1000000000, digits = 3))) %>% #see helper functions
+  output <- output %>%                           
+    mutate(datetime = (rwp_myformat.POSIXct(Time/10, digits = 3))) %>% #see helper functions
     select(Period, Group, Sender, datetime, everything()) %>%
     arrange(Time)
   
