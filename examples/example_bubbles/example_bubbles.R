@@ -5,14 +5,14 @@ source("RedwoodDataLoader.R")
 
 # Bubbles -----
 
-Bub.testData <- read.csv("examples/data/Bubbles.csv")
-# Bub.testData <- read.csv("C:/Users/OKComputer/Downloads/Bubbles-2016-04-14 08-25-19.468240.csv") #from a local copy
-Bub.testData <- redwoodParser(data = Bub.testData,
-                              keys = c("LOG_CONFIG","state")) #only want two messages
+# Bub.testData <- read.csv("examples/data/Bubbles.csv")
+# # Bub.testData <- read.csv("C:/Users/OKComputer/Downloads/Bubbles-2016-04-14 08-25-19.468240.csv") #from a local copy
+# Bub.testData <- redwoodParser(data = Bub.testData,
+#                               keys = c("LOG_CONFIG","state")) #only want two messages
 
 
 # ------
-# Two SubSession Session
+# Load Two SubSession Session
 Bub.testData <- read.csv("examples/example_bubbles/Bubbles-2016-04-26 pt1.csv")
 Pt1Period = max(Bub.testData$Period)
 
@@ -27,32 +27,50 @@ Bub.testData <- bind_rows(
 )
 # Bub.testData <- read.csv("C:/Users/OKComputer/Downloads/Bubbles-2016-04-14 08-25-19.468240.csv") #from a local copy
 Bub.testData <- redwoodParser(data = Bub.testData,
-                              keys = c("LOG_CONFIG","state")) #only want two messages
+                              keys = c("state", "updateAction", "endofsubperiod")) #only want two messages
 
 
 
-# -----
-#' apply config fields to all rows ###################
-Bub.testData.Config <- Bub.testData %>%
-  filter(Key =="LOG_CONFIG") %>%
-  select(1:5, starts_with("LOG_CONFIG.")) %>%
-  mutate(
-    LOG_CONFIG.groups = as.character(LOG_CONFIG.groups),  #group col is an odd one, and requires a little extra work
-    LOG_CONFIG.groups = ifelse(LOG_CONFIG.groups == "NULL", NA, LOG_CONFIG.groups)
-  )
+# Apply Config File Fields -----
 
-# subject of data, only start variable
-Bub.testData.state <- Bub.testData %>%
-  filter(Key != "LOG_CONFIG") %>%
-  select(1:5, starts_with("state"))
-
-# merge back
-Bub.testData <- left_join(
-  Bub.testData.state,
-  select(Bub.testData.Config, 
-         Period, starts_with("LOG_CONFIG."))
-)
+#' Apply config fields (from redwood output data) to all rows ##################
+#' Alternatively, you can also load the config files, and merge them over by period
+# Bub.testData.Config <- Bub.testData %>%
+#   filter(Key =="LOG_CONFIG") %>%
+#   select(1:5, starts_with("LOG_CONFIG.")) %>%
+#   mutate(
+#     LOG_CONFIG.groups = as.character(LOG_CONFIG.groups),  #group col is an odd one, and requires a little extra work
+#     LOG_CONFIG.groups = ifelse(LOG_CONFIG.groups == "NULL", NA, LOG_CONFIG.groups)
+#   )
+# 
+# # subject of data, only start variable
+# Bub.testData.state <- Bub.testData %>%
+#   filter(Key != "LOG_CONFIG") %>%
+#   select(1:5, starts_with("state"))
+# 
+# # merge back
+# Bub.testData <- left_join(
+#   Bub.testData.state,
+#   select(Bub.testData.Config, 
+#          Period, starts_with("LOG_CONFIG."))
+# )
 # mostly done
+
+# Apply config fields (from original config file) to all rows ##################
+Config = read.csv("examples/example_bubbles/2016-04-26 parameters input-ptA.csv")
+Config = bind_rows(
+  Config, 
+  read.csv("examples/example_bubbles/2016-04-26 parameters input-ptB.csv")
+)
+names(Config) <- paste0("config.",names(Config))
+
+Bub.testData <- left_join(
+  Bub.testData, 
+  Config
+)
+
+
+
 
 # -----
 # keeps only obs once a second #############
