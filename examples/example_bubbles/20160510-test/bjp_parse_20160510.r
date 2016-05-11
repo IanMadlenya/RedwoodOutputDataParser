@@ -51,7 +51,7 @@ Bub.testData <- left_join(
 
 
 # ---------------------------------------
-# Prep for images
+# Prep for images --------------------------------------------------------------
 
 Bub.testData <- Bub.testData %>%
   ungroup()%>%
@@ -109,11 +109,19 @@ write.csv(Bub.testData.g2,
 #' Payoff function
 #' see doc ""eq 4, 5, and 7
 
-s_pi <- function(r, p1, n = 4, q1 = 2/3, q2 = 1/3, mu = 100){
-  mu * p1 * ((q1) 
-             + (q2) * ((r-1)) / (n-1)
-             + 3 * (1 - q2 - q1) * max(0, (((r - 1) / (n - 1)) * ((r - 2) / (n - 2))))
-  )
+s_pi <- function(r, p1, n = 6, q1 = 2/3, q2 = 1/3, mu = 100){
+  
+  if ((q1 > 0.66 && q1 < 0.67) && (q2 > 0.33 && q2 < 0.34)){
+    100 * p1 * (
+      (2/3) 
+      + ((2/3) * ((r-1)) / (n-1))
+    )
+  } else if ((q1 == 0.8 && q2 == 0.1)){
+    100 * p1 * ((0.8)  
+                + 0.2 * ((r-1) / (n - 1))
+                + (0.3 * max(0, (((r - 1) / (n - 1)) * ((r - 2) / (n - 2)))))
+    )
+  }
 }
 
 Bub.testData <- Bub.testData %>%
