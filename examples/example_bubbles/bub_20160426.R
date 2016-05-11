@@ -5,7 +5,7 @@ source("RedwoodDataLoader.R")
 library(tidyr)
 
 Bub.testData <- read.csv("examples/example_bubbles/Bubbles-2016-04-26 pt1.csv")
-Pt1Period = max(Bub.testData$Period)
+Pt1Period = max(Bub.testData$Period)-1
 
 Bub.testData.pt2 <-   read.csv("examples/example_bubbles/Bubbles-2016-04-26 pt2.csv") %>%
   mutate(
@@ -119,41 +119,29 @@ Bub.testData <- bind_rows(
 
 Bub.testData.2 <- Bub.testData %>%
   ungroup()%>%
-  group_by(Period)
+  group_by(Period) %>%
+  mutate(
+    Time.Period = Time - min(Time),
+    Time.Period = Time.Period / 10,
+    state.subjectid = as.factor(state.subjectid)
+  )
+
+# Merge over config fields
+Bub.testData.2 <- left_join(
+  Bub.testData.2, 
+  Config, 
+  by = c("Period" = "config.period")
+)
 
 
 library(ggplot2)
 # add within period time
 
-# Group 2 ==============
-Bub.testData.g2 <- Bub.testData.2 %>%
-  as.data.frame()  %>%
-  filter(Group == 2) %>%
-  ungroup()%>%
-  group_by(Period) %>%
-  mutate(
-    Time.Period = Time - min(Time),
-    Time.Period = Time.Period / 10,
-    state.subjectid = as.factor(state.subjectid)
-  )
 
 
-ggplot(Bub.testData.g2,
-       aes(x = Time.Period, y = state.action, colour = state.subjectid)) +
-  geom_point(size = 0.9) +
-  facet_wrap(~Period)
-
-
-
+# Group 1 ==============
 Bub.testData.g1 <- Bub.testData.2 %>%
   filter(Group == 1) %>%
-  ungroup()%>%
-  group_by(Period) %>%
-  mutate(
-    Time.Period = Time - min(Time),
-    Time.Period = Time.Period / 10,
-    state.subjectid = as.factor(state.subjectid)
-  )
 
 ggplot(Bub.testData.g1,
        aes(x = Time.Period, y = state.action, colour = state.subjectid)) +
@@ -161,7 +149,55 @@ ggplot(Bub.testData.g1,
   facet_wrap(~Period)
 
 
+
+# Group 2 ==============
+Bub.testData.g2 <- Bub.testData.2 %>%
+  as.data.frame()  %>%
+  filter(Group == 2) 
+
+ggplot(Bub.testData.g2,
+       aes(x = Time.Period, y = state.action, colour = state.subjectid)) +
+  geom_point(size = 0.9) +
+  facet_wrap(~Period)
+
+# Save times ===================================================================
 write.csv(Bub.testData.g1,
           file = "examples/example_bubbles/Bub_20160428_g1.csv")
 write.csv(Bub.testData.g2,
           file = "examples/example_bubbles/Bub_20160428_g2.csv")
+
+
+# payoff check: =================================================================
+s_pi <- function(r, p1, n = 6, q1 = 2/3, q2 = 1/3, mu = 100){
+
+  if ((q1 > 0.66 && q1 < 0.67) && (q2 > 0.33 && q2 < 0.34)){
+    100 * p1 * (
+      (2/3) 
+      + ((2/3) * ((r-1)) / (n-1))
+      )
+  } else if ((q1 == 0.8 && q2 == 0.1)){
+    100 * p1 * ((0.8)  
+              + 0.2 * ((r-1) / (n - 1))
+              + (0.3 * max(0, (((r - 1) / (n - 1)) * ((r - 2) / (n - 2)))))
+    )
+  }
+}
+
+#   s_pi(1.0, 1.75, 6, 0.6666, 0.33333, 100)
+#   s_pi(2.0, 0.75, 6, 0.6666, 0.33333, 100)
+
+Bub.testData.g2 <- Bub.testData.g2 %>%
+  ungroup() %>%
+  filter(grepl("state", Key)) 
+
+Bub.testData.g2 <- Bub.testData.g2 %>%
+  mutate(
+    s_pi = s_pi(r = state.rank, p1 = state.action, n = 6, q1 = config.q1, q2 = config.q2, mu = config.mu)
+  ) %>%
+  select(
+    Period, Group, datetime, state.subjectid, state.rank, state.action, state.payoff, s_pi,
+    config.q1,config.q2,config.mu, config.groups, everything()
+  )
+
+
+
