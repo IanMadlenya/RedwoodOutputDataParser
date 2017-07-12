@@ -130,7 +130,12 @@ Bub.testData <- Bub.testData %>%
     config.q2 = 1/3
   ) %>%
   mutate(
-    s_pi = s_pi(state.rank, state.action, n = 4, q1 = config.q1, q2 = config.q2, mu = config.mu)
+    s_pi = s_pi(state.rank, 
+                state.action, 
+                n = 4, 
+                q1 = config.q1, 
+                q2 = config.q2, 
+                mu = config.mu)
   ) %>%
   select(
     Period, Group, datetime, state.subjectid, state.rank, state.action, state.payoff, s_pi,
