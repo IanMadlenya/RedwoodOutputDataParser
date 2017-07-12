@@ -1,6 +1,8 @@
 # Redwood Output Data Parser
 Tools for wrangling Redwood output data
 
+email: curtis.kephart@gmail.com
+
 # redwoodParser
 
 Use function `redwoodParser`. 
